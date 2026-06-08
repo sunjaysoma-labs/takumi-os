@@ -23,12 +23,13 @@ public sealed record ApiResponse<T>(
         new(true, data, correlationId);
 
     /// <summary>
-    /// Generic factory that infers <typeparamref name="T"/> from
-    /// the data argument, so call sites can write
+    /// Generic factory that infers <typeparamref name="TData"/>
+    /// from the data argument, so call sites can write
     /// <c>ApiResponse.Ok(myDto, corrId)</c> without repeating the
-    /// type parameter. Internally delegates to the constructor
-    /// route so the wire shape stays identical.
+    /// type parameter. Internally delegates to the typed
+    /// <see cref="Ok(T, Guid)"/> factory so the wire shape stays
+    /// identical.
     /// </summary>
-    public static ApiResponse<T> Ok<T>(T data, Guid correlationId) =>
-        new(true, data, correlationId);
+    public static ApiResponse<T> Ok<TData>(TData data, Guid correlationId) =>
+        Ok(data, correlationId);
 }
