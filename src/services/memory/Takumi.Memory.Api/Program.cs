@@ -20,6 +20,7 @@ using Microsoft.OpenApi.Models;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
+using Azure.Monitor.OpenTelemetry.Exporter;
 using Takumi.Memory.Api.Contexts;
 using Takumi.Memory.Api.Middleware;
 using Takumi.Memory.Application;
@@ -27,6 +28,15 @@ using Takumi.Memory.Domain.Contexts;
 using Takumi.Memory.Infrastructure.DependencyInjection;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+// Static scope array reused across all OpenAPI security requirements.
+// CA1861: prefer static readonly over constant arrays for repeated
+// use; the array isn't mutated anywhere.
+private static readonly string[] ApiScopes =
+{
+    "api://takumi-memory/memory.read",
+    "api://takumi-memory/memory.write",
+};
 
 // ----- Logging (Serilog, DIP §2.2) -----
 builder.Host.UseSerilog((ctx, services, lc) => lc
@@ -101,7 +111,7 @@ var cosmosConnStr = configuration["Cosmos:ConnectionString"]
 builder.Services
     .AddHealthChecks()
     .AddAzureCosmosDB(
-        connectionString: cosmosConnStr,
+        cosmosDbConnectionString: cosmosConnStr,
         name: "cosmos",
         failureStatus: HealthStatus.Unhealthy,
         tags: new[] { "ready" });
@@ -155,7 +165,7 @@ builder.Services.AddSwaggerGen(c =>
                 Type = ReferenceType.SecurityScheme,
                 Id = "oauth2",
             },
-        }] = new[] { "api://takumi-memory/memory.read", "api://takumi-memory/memory.write" },
+        }] = ApiScopes,
     });
 });
 

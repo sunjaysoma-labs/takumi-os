@@ -47,7 +47,9 @@ public sealed class LlmModelHeaderOperationFilter : IOperationFilter
 {
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
     {
-        operation.Responses ??= new System.Collections.Generic.Dictionary<string, OpenApiResponse>();
+        // OpenApiResponses is a wrapper around IDictionary<string, OpenApiResponse>
+        // but typed as a concrete class in Swashbuckle 6.8.x. Construct it directly.
+        operation.Responses ??= new OpenApiResponses();
         foreach (var (_, response) in operation.Responses)
         {
             response.Headers ??= new System.Collections.Generic.Dictionary<string, OpenApiHeader>();
