@@ -56,8 +56,8 @@ public static class MemoryUnitMapper
 
     public static MemoryUnitSearchHitResponse ToSearchHit(
         (MemoryUnit Unit, double Score) hit) => new()
-    {
-        Unit = ToResponse(hit.Unit),
-        Score = hit.Score,
-    };
+        {
+            Unit = ToResponse(hit.Unit),
+            Score = hit.Score,
+        };
 }
