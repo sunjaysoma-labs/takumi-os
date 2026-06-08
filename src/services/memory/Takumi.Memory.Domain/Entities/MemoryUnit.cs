@@ -10,9 +10,9 @@ using Takumi.Memory.Domain.Enums;
 namespace Takumi.Memory.Domain.Entities;
 
 /// <summary>
-/// Atomic primitive of <see cref="Takumi.Memory.Domain.QuantizedMemory"/>
-/// — the source-of-truth representation of any captured knowledge in
-/// Takumi OS. Persisted to Azure Cosmos DB per DIP §6.1.
+/// Atomic memory primitive (the "Knowledge Unit" defined by
+/// [[takumi-os-quantized-memory]] in the project wiki). Persisted
+/// to Azure Cosmos DB per DIP §6.1.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -66,8 +66,9 @@ public sealed class MemoryUnit
 
     public string? Outcome { get; private set; }
 
-    /// <summary>Calibrated confidence in [0, 1]. See
-    /// <see cref="QuantizedMemory"/> for how this is computed.</summary>
+    /// <summary>Calibrated confidence in [0, 1]. See the
+    /// <c>takumi-os-quantized-memory</c> wiki page for how this is
+    /// computed.</summary>
     public double ConfidenceScore { get; private set; }
 
     /// <summary>Vector embedding produced by the quantisation stage.
@@ -217,15 +218,9 @@ public sealed class MemoryUnit
             throw new ArgumentException("TenantId is required.", nameof(tenantId));
         }
 
-        if (source is null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
-        if (actor is null)
-        {
-            throw new ArgumentNullException(nameof(actor));
-        }
+        ArgumentNullException.ThrowIfNull(actor);
 
         if (string.IsNullOrWhiteSpace(context))
         {
