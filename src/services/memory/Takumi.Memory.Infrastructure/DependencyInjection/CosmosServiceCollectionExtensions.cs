@@ -33,8 +33,8 @@ public static class CosmosServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        if (services is null) throw new ArgumentNullException(nameof(services));
-        if (configuration is null) throw new ArgumentNullException(nameof(configuration));
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
 
         services
             .AddOptions<CosmosOptions>()
@@ -54,14 +54,10 @@ public static class CosmosServiceCollectionExtensions
                 return new CosmosClient(options.ConnectionString, new CosmosClientOptions
                 {
                     ApplicationName = "Takumi.Memory",
-                    Serializer = new CosmosJsonDotNetSerializer(
-                        new Newtonsoft.Json.JsonSerializerSettings
-                        {
-                            ContractResolver = new Newtonsoft.Json.Serialization.DefaultContractResolver
-                            {
-                                NamingStrategy = new Newtonsoft.Json.Serialization.CamelCaseNamingStrategy(),
-                            },
-                        }),
+                    // v3.45's CosmosJsonDotNetSerializer is internal; rely on
+                    // the default Newtonsoft serializer + [JsonProperty] on
+                    // MemoryUnitDocument for camelCase mapping. See
+                    // CosmosServiceCollectionExtensions comments.
                 });
             }
 
@@ -76,14 +72,6 @@ public static class CosmosServiceCollectionExtensions
                     new CosmosClientOptions
                     {
                         ApplicationName = "Takumi.Memory",
-                        Serializer = new CosmosJsonDotNetSerializer(
-                            new Newtonsoft.Json.JsonSerializerSettings
-                            {
-                                ContractResolver = new Newtonsoft.Json.Serialization.DefaultContractResolver
-                                {
-                                    NamingStrategy = new Newtonsoft.Json.Serialization.CamelCaseNamingStrategy(),
-                                },
-                            }),
                     });
             }
 

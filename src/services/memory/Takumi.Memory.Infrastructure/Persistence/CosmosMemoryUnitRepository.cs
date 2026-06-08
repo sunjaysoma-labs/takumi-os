@@ -203,7 +203,7 @@ public sealed class CosmosMemoryUnitRepository : IMemoryUnitRepository
         // token to avoid skipping items written concurrently.
         var hasMore = items.Count == limit;
         string? nextCursor = hasMore && items.Count > 0
-            ? items[^1].CreatedAt.UtcTicks.ToString()
+            ? items[^1].CreatedAt.UtcTicks.ToString(System.Globalization.CultureInfo.InvariantCulture)
             : null;
 
         int? total = null;
