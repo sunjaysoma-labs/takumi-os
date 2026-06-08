@@ -1,0 +1,64 @@
+name: Weekly wiki drift check
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"  # Mondays 07:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: weekly-wiki-drift
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    name: Verify wiki ↔ repo coherence
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install check tools
+        run: |
+          pip install pyyaml
+
+      - name: Verify all ADRs are referenced
+        run: |
+          python scripts/adr_check.py
+
+      - name: Verify OpenAPI paths match
+        run: |
+          python scripts/openapi_consistency.py
+
+      - name: Check for stale architecture docs
+        run: |
+          # Fail if any architecture doc hasn't been updated in 90 days
+          # but is referenced by a recent commit.
+          python scripts/architecture_freshness.py
+
+      - name: Open issue on drift
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().split('T')[0];
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              `The weekly wiki-drift check has detected inconsistencies between \`~/wiki\` and this repository.`,
+              ``,
+              `See the [workflow run](${runUrl}) for details.`,
+              ``,
+              `Run date: ${date}`
+            ].join('\n');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Wiki ↔ repo drift detected (${date})`,
+              body: body,
+              labels: ['wiki-drift', 'maintenance']
+            });
