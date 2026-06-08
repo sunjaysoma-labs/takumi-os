@@ -1,0 +1,434 @@
+openapi: 3.1.0
+info:
+  title: Takumi Memory API
+  version: 1.0.0
+  description: |
+    MemoryUnit CRUD, cursor-paginated list, and hybrid (lexical +
+    embedding cosine) search. Implements [[takumi-os-quantized-memory]]
+    and the MemoryUnit entity in [[takumi-os-domain-model]].
+
+    Source of truth: this YAML is generated from the .NET controllers
+    via Swashbuckle on every CI run. The same file is the input to
+    `scripts/generate-contracts.sh`, which produces:
+      - src/shared/contracts/csharp/Takumi.Memory.Contracts.cs
+      - src/shared/contracts/python/takumi_memory/
+      - src/shared/contracts/typescript/memory.ts
+    The TypeScript client is what the Next.js FE uses through
+    openapi-fetch (DIP §2.4, UI Pack §2).
+
+    Common conventions (DIP §9.1):
+      - All paths prefixed with /api/v1/
+      - All responses wrapped in the standard envelope
+        { success, data, correlationId }
+      - All error responses are RFC 7807 Problem Details
+      - All write endpoints accept Idempotency-Key
+      - All endpoints emit X-Correlation-Id
+servers:
+  - url: https://api.takumi.ai/api/v1
+    description: Production
+  - url: https://api.staging.takumi.ai/api/v1
+    description: Staging
+  - url: http://localhost:5080/api/v1
+    description: Local dev (dotnet run)
+
+security:
+  - oauth2: [memory.read, memory.write]
+
+tags:
+  - name: MemoryUnits
+    description: CRUD, list, and search for MemoryUnits
+
+paths:
+  /memory-units:
+    post:
+      tags: [MemoryUnits]
+      operationId: createMemoryUnit
+      summary: Write a MemoryUnit
+      description: |
+        Persists a new MemoryUnit in the current tenant. The id,
+        memoryId, createdAt, and updatedAt are server-managed.
+
+        Returns 409 if a unit already exists for the
+        (tenantId, source.sourceSystemId, source.externalId) tuple
+        — see DIP §6.2 dedup index.
+      security:
+        - oauth2: [memory.write]
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMemoryUnitRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/CreatedMemoryUnit'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    get:
+      tags: [MemoryUnits]
+      operationId: listMemoryUnits
+      summary: List MemoryUnits (cursor pagination)
+      security:
+        - oauth2: [memory.read]
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - in: query
+          name: memoryType
+          schema: { $ref: '#/components/schemas/MemoryType' }
+        - in: query
+          name: memoryCategory
+          schema: { $ref: '#/components/schemas/MemoryCategory' }
+        - in: query
+          name: tags
+          description: Repeat for each tag filter
+          schema:
+            type: array
+            items: { type: string }
+          style: form
+          explode: true
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50, maximum: 100, minimum: 1 }
+        - in: query
+          name: cursor
+          schema: { type: string }
+        - in: query
+          name: includeTotal
+          schema: { type: boolean, default: false }
+        - in: query
+          name: sort
+          schema:
+            $ref: '#/components/schemas/ListSortOrder'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/MemoryUnitListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /memory-units/{memoryId}:
+    get:
+      tags: [MemoryUnits]
+      operationId: getMemoryUnit
+      summary: Get a MemoryUnit by id (tenant-scoped)
+      security:
+        - oauth2: [memory.read]
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - in: path
+          name: memoryId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          $ref: '#/components/responses/OkMemoryUnit'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /memory-units/search:
+    post:
+      tags: [MemoryUnits]
+      operationId: searchMemoryUnits
+      summary: Hybrid (lexical + vector) search across MemoryUnits
+      description: |
+        M0 returns lexical match (substring across Context/Event/
+        Decision/Outcome) blended with confidence. Vector search is
+        added in TKM-M0-016 once the AI Search index is provisioned.
+      security:
+        - oauth2: [memory.read]
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchMemoryUnitsRequest'
+      responses:
+        '200':
+          description: OK
+          headers:
+            x-llm-model:
+              $ref: '#/components/headers/LlmModel'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MemoryUnitSearchHitResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
+          tokenUrl: https://login.microsoftonline.com/common/oauth2/v2.0/token
+          scopes:
+            api://takumi-memory/memory.read: Read MemoryUnits
+            api://takumi-memory/memory.write: Write MemoryUnits
+
+  parameters:
+    CorrelationId:
+      in: header
+      name: X-Correlation-Id
+      required: false
+      description: Caller-supplied correlation id; echoed in the response header.
+      schema: { type: string, format: uuid }
+    IdempotencyKey:
+      in: header
+      name: Idempotency-Key
+      required: false
+      description: |
+        Caller-supplied idempotency key for write endpoints. M0
+        accepts but does not enforce; R1 will persist in a Cosmos
+        idempotency container.
+      schema: { type: string, format: uuid }
+
+  headers:
+    CorrelationId:
+      description: Server-echoed correlation id.
+      schema: { type: string, format: uuid }
+    LlmModel:
+      description: |
+        Model route for any LLM-backed work on this endpoint
+        (DIP §9.1). M0 memory endpoints do not touch an LLM;
+        header is always present for contract stability.
+      schema: { type: string }
+
+  responses:
+    CreatedMemoryUnit:
+      description: Created
+      headers:
+        X-Correlation-Id: { $ref: '#/components/headers/CorrelationId' }
+        x-llm-model: { $ref: '#/components/headers/LlmModel' }
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiResponse'
+              - type: object
+                properties:
+                  data: { $ref: '#/components/schemas/MemoryUnitResponse' }
+    OkMemoryUnit:
+      description: OK
+      headers:
+        X-Correlation-Id: { $ref: '#/components/headers/CorrelationId' }
+        x-llm-model: { $ref: '#/components/headers/LlmModel' }
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiResponse'
+              - type: object
+                properties:
+                  data: { $ref: '#/components/schemas/MemoryUnitResponse' }
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Forbidden:
+      description: Forbidden
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    NotFound:
+      description: Not found
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Conflict:
+      description: Conflict (duplicate MemoryUnit)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  schemas:
+    # ---- Envelope (DIP §9.1) ----
+    ApiResponse:
+      type: object
+      required: [success, data, correlationId]
+      properties:
+        success: { type: boolean }
+        data: {}
+        correlationId: { type: string, format: uuid }
+
+    # ---- Domain enums ----
+    MemoryType:
+      type: string
+      description: Top-level classification per [[takumi-os-quantized-memory]] §3.1
+      enum:
+        - Strategic
+        - Operational
+        - Human
+        - Outcome
+        - Risk
+        - Financial
+        - Customer
+        - Project
+        - Compliance
+    MemoryCategory:
+      type: string
+      enum: [Strategic, Operational, Human, Outcome]
+    ActorType:
+      type: string
+      enum: [Person, Agent, System]
+    ListSortOrder:
+      type: string
+      enum: [CreatedAtDesc, CreatedAtAsc, ConfidenceDesc, UpdatedAtDesc]
+      default: CreatedAtDesc
+
+    # ---- Problem Details (RFC 7807) ----
+    ProblemDetails:
+      type: object
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+        # extensions (e.g. errors[]) are not modelled here
+        additionalProperties: true
+
+    # ---- Domain models ----
+    MemorySource:
+      type: object
+      required: [sourceSystemId, externalId]
+      properties:
+        sourceSystemId: { type: string, format: uuid }
+        externalId: { type: string, maxLength: 512 }
+        url: { type: string, format: uri, maxLength: 2048, nullable: true }
+    MemoryActor:
+      type: object
+      required: [type, id, name]
+      properties:
+        type: { $ref: '#/components/schemas/ActorType' }
+        id: { type: string, format: uuid }
+        name: { type: string, maxLength: 200 }
+    GraphLink:
+      type: object
+      required: [nodeType, nodeId, edgeType]
+      properties:
+        nodeType: { type: string }
+        nodeId: { type: string, format: uuid }
+        edgeType: { type: string }
+    MemoryUnit:
+      type: object
+      description: Atomic memory primitive per DIP §6.1
+      required:
+        - id
+        - tenantId
+        - memoryId
+        - memoryType
+        - memoryCategory
+        - source
+        - context
+        - actor
+        - event
+        - confidenceScore
+        - tags
+        - createdAt
+        - updatedAt
+      properties:
+        id: { type: string, description: "Document id, format mu_<guid>" }
+        tenantId: { type: string, format: uuid }
+        memoryId: { type: string, format: uuid }
+        memoryType: { $ref: '#/components/schemas/MemoryType' }
+        memoryCategory: { $ref: '#/components/schemas/MemoryCategory' }
+        source: { $ref: '#/components/schemas/MemorySource' }
+        context: { type: string, maxLength: 2000 }
+        actor: { $ref: '#/components/schemas/MemoryActor' }
+        event: { type: string, maxLength: 2000 }
+        decision: { type: string, maxLength: 2000, nullable: true }
+        outcome: { type: string, maxLength: 2000, nullable: true }
+        confidenceScore: { type: number, format: double, minimum: 0, maximum: 1 }
+        graphLinks:
+          type: array
+          items: { $ref: '#/components/schemas/GraphLink' }
+        tags:
+          type: array
+          items: { type: string, maxLength: 64 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    # ---- Request / Response DTOs ----
+    CreateMemoryUnitRequest:
+      type: object
+      required: [memoryType, memoryCategory, source, context, actor, event, confidenceScore, tags]
+      properties:
+        memoryType: { $ref: '#/components/schemas/MemoryType' }
+        memoryCategory: { $ref: '#/components/schemas/MemoryCategory' }
+        source: { $ref: '#/components/schemas/MemorySource' }
+        context: { type: string, maxLength: 2000 }
+        actor: { $ref: '#/components/schemas/MemoryActor' }
+        event: { type: string, maxLength: 2000 }
+        decision: { type: string, maxLength: 2000, nullable: true }
+        outcome: { type: string, maxLength: 2000, nullable: true }
+        confidenceScore: { type: number, format: double, minimum: 0, maximum: 1 }
+        tags:
+          type: array
+          items: { type: string, maxLength: 64 }
+    MemoryUnitResponse:
+      $ref: '#/components/schemas/MemoryUnit'
+    MemoryUnitListResponse:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/MemoryUnit' }
+        nextCursor: { type: string, nullable: true }
+        hasMore: { type: boolean }
+        totalCount: { type: integer, nullable: true }
+    MemoryUnitSearchHitResponse:
+      type: object
+      required: [unit, score]
+      properties:
+        unit: { $ref: '#/components/schemas/MemoryUnit' }
+        score: { type: number, format: double }
+    SearchMemoryUnitsRequest:
+      type: object
+      required: [query]
+      properties:
+        query: { type: string, maxLength: 2000 }
+        topK: { type: integer, default: 10, maximum: 100, minimum: 1 }
+        memoryTypes:
+          type: array
+          items: { $ref: '#/components/schemas/MemoryType' }
+        minConfidence: { type: number, format: double, default: 0.5, minimum: 0, maximum: 1 }
+        tags:
+          type: array
+          items: { type: string }

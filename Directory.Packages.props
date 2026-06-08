@@ -15,6 +15,8 @@
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Identity.Web" Version="3.2.0" />
 
     <!-- EF Core / data -->
@@ -23,6 +25,7 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.45.0" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
 
     <!-- CQRS / MediatR -->
     <PackageVersion Include="MediatR" Version="12.4.0" />
@@ -31,6 +34,7 @@
     <!-- Validation -->
     <PackageVersion Include="FluentValidation" Version="11.10.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.10.0" />
+    <PackageVersion Include="FluentValidation.TestHelper" Version="11.10.0" />
 
     <!-- Eventing / messaging -->
     <PackageVersion Include="MassTransit" Version="8.3.0" />
@@ -52,7 +56,6 @@
     <PackageVersion Include="Serilog.Enrichers.CorrelationId" Version="3.0.1" />
 
     <!-- Resilience -->
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.0.0" />
     <PackageVersion Include="Polly" Version="8.4.2" />
 
     <!-- API documentation -->
@@ -77,6 +80,7 @@
     <PackageVersion Include="FluentAssertions" Version="6.12.1" />
     <PackageVersion Include="NSubstitute" Version="5.1.0" />
     <PackageVersion Include="NSubstitute.Analyzers.CSharp" Version="1.0.16" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Extensions" Version="9.0.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="coverlet.msbuild" Version="6.0.2" />
     <PackageVersion Include="Verify" Version="28.1.0" />
