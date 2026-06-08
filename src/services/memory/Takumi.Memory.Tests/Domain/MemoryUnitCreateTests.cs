@@ -9,7 +9,7 @@ using Takumi.Memory.Domain.Entities;
 using Takumi.Memory.Domain.Enums;
 using Xunit;
 
-namespace Takumi.Memory.Tests.Domain;
+namespace Takumi.Memory.Tests.Unit.Domain;
 
 public sealed class MemoryUnitCreateTests
 {

@@ -132,32 +132,12 @@ public static class CosmosServiceCollectionExtensions
             {
                 Id = options.MemoryUnitsContainer,
                 PartitionKeyPath = "/tenantId",
-                IndexingPolicy = new IndexingPolicy
-                {
-                    // Default indexing with composite indexes that
-                    // match DIP §6.2:
-                    CompositeIndexes =
-                    {
-                        new CompositeIndex
-                        {
-                            Indexes =
-                            {
-                                new CompositePath { Path = "/tenantId", Order = CompositePathOrder.Ascending },
-                                new CompositePath { Path = "/memoryType", Order = CompositePathOrder.Ascending },
-                                new CompositePath { Path = "/createdAt", Order = CompositePathOrder.Descending },
-                            },
-                        },
-                        new CompositeIndex
-                        {
-                            Indexes =
-                            {
-                                new CompositePath { Path = "/tenantId", Order = CompositePathOrder.Ascending },
-                                new CompositePath { Path = "/source/sourceSystemId", Order = CompositePathOrder.Ascending },
-                                new CompositePath { Path = "/source/externalId", Order = CompositePathOrder.Ascending },
-                            },
-                        },
-                    },
-                },
+                // TODO(M0-R1): Add composite indexes per DIP §6.2:
+                //   (tenantId, memoryType, createdAt desc)
+                //   (tenantId, source.sourceSystemId, source.externalId)
+                // M0 dev uses the default index; explicit composite
+                // indexes are an R1 optimisation once we know the
+                // production query patterns.
             })
             .ConfigureAwait(false);
         logger.LogInformation(

@@ -31,7 +31,7 @@ public sealed class MemoryUnitsApiTests : IClassFixture<MemoryApiFactory>
     public async Task Create_Returns201WithEnvelope()
     {
         var client = _factory.CreateClient();
-        SetTenant(client, _factory.TestTenant);
+        SetTenant(client, _factory.TestTenant.Value);
 
         var response = await client.PostAsJsonAsync(
             "/api/v1/memory-units",
@@ -100,7 +100,7 @@ public sealed class MemoryUnitsApiTests : IClassFixture<MemoryApiFactory>
     public async Task Get_NonExistent_Returns404ProblemDetails()
     {
         var client = _factory.CreateClient();
-        SetTenant(client, _factory.TestTenant);
+        SetTenant(client, _factory.TestTenant.Value);
 
         var response = await client.GetAsync(
             $"/api/v1/memory-units/{Guid.NewGuid()}");
@@ -114,7 +114,7 @@ public sealed class MemoryUnitsApiTests : IClassFixture<MemoryApiFactory>
     public async Task Create_DuplicateSource_Returns409()
     {
         var client = _factory.CreateClient();
-        SetTenant(client, _factory.TestTenant);
+        SetTenant(client, _factory.TestTenant.Value);
 
         var sourceId = Guid.NewGuid();
         var req = new CreateMemoryUnitRequest

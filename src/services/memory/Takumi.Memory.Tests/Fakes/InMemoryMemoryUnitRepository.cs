@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Takumi.Memory.Domain.Common;
 using Takumi.Memory.Domain.Entities;
+using Takumi.Memory.Domain.Enums;
 using Takumi.Memory.Domain.Repositories;
 
 namespace Takumi.Memory.Tests.Fakes;
