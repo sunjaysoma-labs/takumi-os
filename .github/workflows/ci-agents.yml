@@ -1,0 +1,73 @@
+name: CI Agents
+
+on:
+  pull_request:
+    paths:
+      - "src/workers/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".python-version"
+      - ".github/workflows/ci-agents.yml"
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-agents-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-test:
+    name: Lint, typecheck, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version-file: ".python-version"
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        working-directory: src/workers
+        run: uv sync --frozen --all-extras
+
+      - name: Lint (ruff)
+        working-directory: src/workers
+        run: uv run ruff check .
+
+      - name: Format check (ruff)
+        working-directory: src/workers
+        run: uv run ruff format --check .
+
+      - name: Type check (mypy)
+        working-directory: src/workers
+        run: uv run mypy .
+
+      - name: Unit + integration tests
+        working-directory: src/workers
+        run: uv run pytest --cov=src --cov-report=xml --cov-report=term-missing
+
+      - name: Coverage gate
+        working-directory: src/workers
+        run: |
+          uv run coverage report --fail-under=80
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: src/workers/coverage.xml
+          flags: agents
+          fail_ci_if_error: false

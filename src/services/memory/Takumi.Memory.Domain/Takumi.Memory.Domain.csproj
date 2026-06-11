@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>
+      Takumi OS Memory Service — Domain layer.
+      Entities, value objects, repository contracts.
+      No infrastructure dependencies.
+    </Description>
+    <RootNamespace>Takumi.Memory.Domain</RootNamespace>
+    <AssemblyName>Takumi.Memory.Domain</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR.Contracts" />
+  </ItemGroup>
+
+</Project>

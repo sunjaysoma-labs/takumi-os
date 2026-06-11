@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>
+      Takumi OS Memory Service — Application layer.
+      Use-case handlers (MediatR), request/response DTOs,
+      FluentValidation, paging/cursor contracts.
+      Depends only on Domain.
+    </Description>
+    <RootNamespace>Takumi.Memory.Application</RootNamespace>
+    <AssemblyName>Takumi.Memory.Application</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Takumi.Memory.Domain\Takumi.Memory.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+  </ItemGroup>
+
+</Project>

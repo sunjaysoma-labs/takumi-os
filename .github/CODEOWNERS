@@ -1,0 +1,64 @@
+# CODEOWNERS for Takumi OS
+# Path patterns are evaluated in order; the last match wins.
+# Each line is: <pattern> <owner1> <owner2> ...
+
+# Default: no owner (require explicit owner below)
+*                                               @sunjaysoma-labs/maintainers
+
+# Platform / infra
+/.github/                                       @sunjaysoma-labs/maintainers
+/terraform/                                     @sunjaysoma-labs/platform
+/k8s/                                           @sunjaysoma-labs/platform
+/scripts/                                       @sunjaysoma-labs/platform
+/Directory.Build.props                          @sunjaysoma-labs/platform
+/Directory.Packages.props                       @sunjaysoma-labs/platform
+/global.json                                    @sunjaysoma-labs/platform
+
+# Architecture docs (require review by an architect)
+/docs/architecture/                             @sunjaysoma-labs/architects
+/docs/adr/                                      @sunjaysoma-labs/architects
+
+# Per-service ownership
+/src/services/identity/                         @sunjaysoma-labs/team-identity
+/src/services/organization/                     @sunjaysoma-labs/team-org
+/src/services/process/                          @sunjaysoma-labs/team-operations
+/src/services/project/                          @sunjaysoma-labs/team-operations
+/src/services/kpi/                              @sunjaysoma-labs/team-operations
+/src/services/memory/                           @sunjaysoma-labs/team-knowledge
+/src/services/agent/                            @sunjaysoma-labs/team-agents
+/src/services/reporting/                        @sunjaysoma-labs/team-reporting
+/src/services/knowledge-acquisition/            @sunjaysoma-labs/team-knowledge
+
+# Python workers
+/src/workers/agents/coo_agent/                  @sunjaysoma-labs/team-agents
+/src/workers/agents/caio_agent/                 @sunjaysoma-labs/team-agents
+/src/workers/agents/transformation_agent/       @sunjaysoma-labs/team-agents
+/src/workers/agents/risk_agent/                 @sunjaysoma-labs/team-agents
+/src/workers/agents/intelligence_agent/         @sunjaysoma-labs/team-agents
+/src/workers/agents/knowledge_agent/            @sunjaysoma-labs/team-knowledge
+/src/workers/agents/automation_agent/           @sunjaysoma-labs/team-agents
+/src/workers/agents/knowledge_acquisition_agent/ @sunjaysoma-labs/team-knowledge
+/src/workers/connectors/                        @sunjaysoma-labs/team-knowledge
+/src/workers/extractors/                        @sunjaysoma-labs/team-knowledge
+/src/workers/shared/                            @sunjaysoma-labs/platform
+
+# Frontend
+/src/frontend/                                  @sunjaysoma-labs/team-frontend
+
+# Shared
+/src/shared/                                    @sunjaysoma-labs/platform
+
+# Tests
+/tests/                                         @sunjaysoma-labs/qa
+
+# Tickets (change requires PM/architect review)
+/tickets/                                       @sunjaysoma-labs/architects
+
+# Wiki drift job
+/.github/workflows/weekly-wiki-drift.yml        @sunjaysoma-labs/maintainers
+
+# Security-sensitive
+/src/services/identity/**/Auth*                @sunjaysoma-labs/security
+/src/services/identity/**/Rbac*                @sunjaysoma-labs/security
+/src/services/identity/**/Tenant*               @sunjaysoma-labs/security
+/terraform/modules/keyvault/                    @sunjaysoma-labs/security
